@@ -17,7 +17,7 @@ test.describe('Register Page', () => {
     await page.getByTestId('register-btn').click();
     await expect(page).toHaveURL(`${process.env.BASE_URL}/login`);
   });
-
+  
   test('a user cannot register with empty fields', async ({ page }) => {
     await page.getByTestId('register-btn').click();
     await expect(page.getByTestId('name-error')).toBeVisible();
@@ -79,4 +79,11 @@ test.describe('Register Page', () => {
     await expect(page.getByTestId('password-error')).toHaveText('Password must be at least 6 characters');
   });
 
+  test('a user can register with a password of 6 characters', async ({ page }) => {
+    await page.getByTestId('register-name-input').fill(faker.person.firstName());
+    await page.getByTestId('register-email-input').fill(faker.internet.email());
+    await page.getByTestId('register-password-input').fill('123456');
+    await page.getByTestId('register-btn').click();
+    await expect(page).toHaveURL(`${process.env.BASE_URL}/login`);
+  });
 });
