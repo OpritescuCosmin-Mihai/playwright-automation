@@ -1,89 +1,74 @@
 import { test, expect } from '@playwright/test';
 import { faker } from '@faker-js/faker';
-import dotenv from 'dotenv';
-import path from 'path';
-import assert from 'assert';
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+import { RegisterPage } from "../../pages/register/register.page";
+
+const DEMO = { email: process.env.TEST_EMAIL!, password: process.env.TEST_PASSWORD! };
 
 test.describe('Register Page', () => {
+  let registerPage: RegisterPage;
+
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${process.env.BASE_URL}/register`);
+    registerPage = new RegisterPage(page);
+    await registerPage.goto();
   });
 
-  test('register with valid credentials', async ({ page }) => {
-    await page.getByTestId('register-name-input').fill(faker.person.firstName());
-    await page.getByTestId('register-email-input').fill(faker.internet.email());
-    await page.getByTestId('register-password-input').fill(faker.internet.password());
-    await page.getByTestId('register-btn').click();
-    await expect(page).toHaveURL(`${process.env.BASE_URL}/login`);
+  test('C61 - register with valid credentials', async ({ page }) => {
+    await registerPage.register(
+      faker.person.firstName(),
+      faker.internet.email(),
+      faker.internet.password()
+    );
+
+    await expect(page).toHaveURL("/login");
   });
   
-  test('register with empty fields', async ({ page }) => {
-    await page.getByTestId('register-btn').click();
-    await expect(page.getByTestId('name-error')).toBeVisible();
-    await expect(page.getByTestId('name-error')).toHaveText('Name is required');
-    await expect(page.getByTestId('email-error')).toBeVisible();
-    await expect(page.getByTestId('email-error')).toHaveText('Email is required');
-    await expect(page.getByTestId('password-error')).toBeVisible();
-    await expect(page.getByTestId('password-error')).toHaveText('Password is required');
+  test('C62 - register with empty fields', async ({ page }) => {
+    await registerPage.register('', '', '');
+
+    await expect(registerPage.nameError()).toHaveText('Name is required');
+    await expect(registerPage.emailError()).toHaveText('Email is required');
+    await expect(registerPage.passwordError()).toHaveText('Password is required');
   });
 
-  test('register without a name', async ({ page }) => {
-    await page.getByTestId('register-email-input').fill(faker.internet.email());
-    await page.getByTestId('register-password-input').fill(faker.internet.password());
-    await page.getByTestId('register-btn').click();
-    await expect(page.getByTestId('name-error')).toBeVisible();
-    await expect(page.getByTestId('name-error')).toHaveText('Name is required');
+  test('C63 - register without a name', async ({ page }) => {
+    await registerPage.register('', faker.internet.email(), faker.internet.password());
+
+    await expect(registerPage.nameError()).toHaveText('Name is required');
   });
 
-  test('register without an email', async ({ page }) => {
-    await page.getByTestId('register-name-input').fill(faker.person.firstName());
-    await page.getByTestId('register-password-input').fill(faker.internet.password());
-    await page.getByTestId('register-btn').click();
-    await expect(page.getByTestId('email-error')).toBeVisible();
-    await expect(page.getByTestId('email-error')).toHaveText('Email is required');
+  test('C64 - register without an email', async ({ page }) => {
+    await registerPage.register(faker.person.firstName(), '', faker.internet.password());
+
+    await expect(registerPage.emailError()).toHaveText('Email is required');
   });
 
-  test('register without a password', async ({ page }) => {
-    await page.getByTestId('register-name-input').fill(faker.person.firstName());
-    await page.getByTestId('register-email-input').fill(faker.internet.email());
-    await page.getByTestId('register-btn').click();
-    await expect(page.getByTestId('password-error')).toBeVisible();
-    await expect(page.getByTestId('password-error')).toHaveText('Password is required');
+  test('C65 - register without a password', async ({ page }) => {
+    await registerPage.register(faker.person.firstName(), faker.internet.email(), '');
+
+    await expect(registerPage.passwordError()).toHaveText('Password is required');
   });
 
-  test('register with invalid email', async ({ page }) => {
-    await page.getByTestId('register-name-input').fill(faker.person.firstName());
-    await page.getByTestId('register-email-input').fill('invalid-email');
-    await page.getByTestId('register-password-input').fill(faker.internet.password());
-    await page.getByTestId('register-btn').click();
-    await expect(page.getByTestId('email-error')).toBeVisible();
+  test('C66 - register with invalid email', async ({ page }) => {
+    await registerPage.register(faker.person.firstName(), 'invalid-email', faker.internet.password());
+
     await expect(page.getByTestId('email-error')).toHaveText('Enter a valid email');
   });
 
-  test('register with an already registered email', async ({ page }) => {
-    await page.getByTestId('register-name-input').fill(faker.person.firstName());
-    await page.getByTestId('register-email-input').fill(process.env.TEST_EMAIL!);
-    await page.getByTestId('register-password-input').fill(faker.internet.password());
-    await page.getByTestId('register-btn').click();
-    await expect(page.getByTestId('email-error')).toBeVisible();
-    await expect(page.getByTestId('email-error')).toHaveText('Email is already registered');
+  test('C53 - register with an already registered email', async ({ page }) => {
+    await registerPage.register(faker.person.firstName(), process.env.TEST_EMAIL!, faker.internet.password());
+
+    await expect(registerPage.emailError()).toHaveText('Email is already registered');
   });
 
-  test('register with a password less than 6 characters', async ({ page }) => {
-    await page.getByTestId('register-name-input').fill(faker.person.firstName());
-    await page.getByTestId('register-email-input').fill(faker.internet.email());
-    await page.getByTestId('register-password-input').fill('123');
-    await page.getByTestId('register-btn').click();
-    await expect(page.getByTestId('password-error')).toBeVisible();
-    await expect(page.getByTestId('password-error')).toHaveText('Password must be at least 6 characters');
+  test('C67 - register with a password less than 6 characters', async ({ page }) => {
+    await registerPage.register(faker.person.firstName(), faker.internet.email(), '123');
+    
+    await expect(registerPage.passwordError()).toHaveText('Password must be at least 6 characters');
   });
 
-  test('register with a password of 6 characters', async ({ page }) => {
-    await page.getByTestId('register-name-input').fill(faker.person.firstName());
-    await page.getByTestId('register-email-input').fill(faker.internet.email());
-    await page.getByTestId('register-password-input').fill('123456');
-    await page.getByTestId('register-btn').click();
-    await expect(page).toHaveURL(`${process.env.BASE_URL}/login`);
+  test('C68 - register with a password of 6 characters', async ({ page }) => {
+    await registerPage.register(faker.person.firstName(), faker.internet.email(), '123456');
+
+    await expect(page).toHaveURL("/login");
   });
 });

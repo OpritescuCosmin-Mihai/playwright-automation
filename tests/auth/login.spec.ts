@@ -1,54 +1,48 @@
 import { test, expect } from '@playwright/test';
 import { faker } from '@faker-js/faker';
-import dotenv from 'dotenv';
-import path from 'path';
-import assert from 'assert';
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+import { LoginPage } from '../../pages/login/login.page';
+
+const DEMO = { email: process.env.TEST_EMAIL!, password: process.env.TEST_PASSWORD! };
 
 test.describe('Login Page', () => {
+  let loginPage: LoginPage;
+
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${process.env.BASE_URL}/login`);
+    loginPage = new LoginPage(page);
+    await loginPage.goto();
   });
 
-  test('log in with valid demo credentials', async ({ page }) => {
-    await page.getByTestId('login-email-input').fill(process.env.TEST_EMAIL!);
-    await page.getByTestId('login-password-input').fill(process.env.TEST_PASSWORD!);
-    await page.getByTestId('login-btn').click();
-    await expect(page).toHaveURL(`${process.env.BASE_URL}/products`);
+  test('C46 - log in with valid demo credentials', async ({ page }) => {
+    await loginPage.login(DEMO.email, DEMO.password);
+    await expect(page).toHaveURL("/products");
   });
 
-  test('log in with empty fields', async ({ page }) => { 
-    await page.getByTestId('login-btn').click();
-    await expect(page.getByTestId('login-error')).toBeVisible();
+  test('C58 - log in with empty fields', async ({ page }) => { 
+    await loginPage.login("", "");
+    await expect(loginPage.error()).toBeVisible();
   });
 
-  test('log in without an email', async ({ page }) => {
-    await page.getByTestId('login-password-input').fill(process.env.TEST_PASSWORD!);
-    await page.getByTestId('login-btn').click();
-    await expect(page.getByTestId('login-error')).toBeVisible();
-    await expect(page.getByTestId('login-error')).toHaveText('Email is required');
+  test('C59 - log in without an email', async ({ page }) => {
+    await loginPage.login("", DEMO.password);
+    await expect(loginPage.error()).toBeVisible();
+    await expect(loginPage.error()).toHaveText('Email is required');
   });
 
-  test('log in without a password', async ({ page }) => {
-    await page.getByTestId('login-email-input').fill(process.env.TEST_EMAIL!);
-    await page.getByTestId('login-btn').click();
-    await expect(page.getByTestId('login-error')).toBeVisible();
-    await expect(page.getByTestId('login-error')).toHaveText('Password is required');
+  test('C48 - log in without a password', async ({ page }) => {
+    await loginPage.login(DEMO.email, "");
+    await expect(loginPage.error()).toBeVisible();
+    await expect(loginPage.error()).toHaveText('Password is required');
   });
   
-  test('log in with non-existing email', async ({ page }) => {
-    await page.getByTestId('login-email-input').fill(faker.internet.email());
-    await page.getByTestId('login-password-input').fill(process.env.TEST_PASSWORD!);
-    await page.getByTestId('login-btn').click();
-    await expect(page.getByTestId('login-error')).toBeVisible();
-    await expect(page.getByTestId('login-error')).toHaveText('Invalid email or password');
+  test('C60 - log in with non-existing email', async ({ page }) => {
+    await loginPage.login(faker.internet.email(), DEMO.password);
+    await expect(loginPage.error()).toBeVisible();
+    await expect(loginPage.error()).toHaveText('Invalid email or password');
   });
 
-  test('log in with incorrect password', async ({ page }) => {
-    await page.getByTestId('login-email-input').fill(process.env.TEST_EMAIL!);
-    await page.getByTestId('login-password-input').fill(faker.internet.password());
-    await page.getByTestId('login-btn').click();
-    await expect(page.getByTestId('login-error')).toBeVisible();
-    await expect(page.getByTestId('login-error')).toHaveText('Invalid email or password');
+  test('C47 - log in with incorrect password', async ({ page }) => {
+    await loginPage.login(DEMO.email, faker.internet.password());
+    await expect(loginPage.error()).toBeVisible();
+    await expect(loginPage.error()).toHaveText('Invalid email or password');
   });
 });
