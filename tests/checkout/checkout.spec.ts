@@ -1,47 +1,52 @@
 import { test, expect } from '@playwright/test';
-import { faker } from '@faker-js/faker';
-import dotenv from 'dotenv';
+import { LoginPage } from "../../pages/login/login.page";
+import { ProductsPage } from "../../pages/products/products.page";
+import { CartPage } from "../../pages/cart/cart.page";
+import { Header } from "../../pages/common/header.page";
+import { loginAsDemo } from '../../helpers/auth';
+
+const DEMO = { email: process.env.TEST_EMAIL!, password: process.env.TEST_PASSWORD! };
 
 test.describe('Checkout Page', () => {
+  let productsPage: ProductsPage;
+  let cartPage: CartPage;
+  let header: Header;
+
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${process.env.BASE_URL}/login`);
-    await page.getByTestId('login-email-input').fill(process.env.TEST_EMAIL!);
-    await page.getByTestId('login-password-input').fill(process.env.TEST_PASSWORD!);
-    await page.getByTestId('login-btn').click();
-    
-    await expect(page).toHaveURL(`${process.env.BASE_URL}/products`);
-    let cartItemsCount = await page.getByTestId('remove-cart-item-btn').count();
-    while (cartItemsCount > 0) {
-      await page.getByTestId('remove-cart-item-btn').first().click();
-      cartItemsCount--;
-    }
+    await loginAsDemo(page);
+
+    cartPage = new CartPage(page);
+    await cartPage.goto();
+    await cartPage.clear();
+
+    productsPage = new ProductsPage(page);
+    header = new Header(page);
+    await productsPage.goto();
   });
 
   test('C55 - add a product to the cart', async ({ page }) => {
-    await page.getByTestId('add-to-cart-btn').first().click();
-    await page.getByTestId('cart-link').click();
+    await productsPage.addFirstToCart();
+    await header.openCart();
 
-    await expect(page).toHaveURL(`${process.env.BASE_URL}/cart`);
-    await expect(page.getByText('Gaming Laptop$1199.00 · Qty 1$'));
+    await expect(page).toHaveURL("/cart");
+    await expect(cartPage.itemByText("Qty 1")).toBeVisible();
   });
 
   test('C56 - add a product to the cart twice', async ({ page }) => {
-    await page.getByTestId('add-to-cart-btn').first().click();
-    await page.getByTestId('add-to-cart-btn').first().click();
-    await page.getByTestId('cart-link').click();
+    await productsPage.addFirstToCart();
+    await productsPage.addFirstToCart();
+    await header.openCart();
 
-    await expect(page).toHaveURL(`${process.env.BASE_URL}/cart`);
-    await expect(page.getByText('Gaming Laptop$1199.00 · Qty 2$'));
+    await expect(page).toHaveURL("/cart");
+    await expect(cartPage.itemByText("Qty 2")).toBeVisible();
   });
 
   test('C57 - remove a product from the cart', async ({ page }) => {
-    await page.getByTestId('add-to-cart-btn').first().click();
-    await page.getByTestId('cart-link').click();
+    await productsPage.addFirstToCart();
+    await header.openCart();
+    await cartPage.removeFirst();
 
-    await expect(page).toHaveURL(`${process.env.BASE_URL}/cart`);
-
-    await page.getByTestId('remove-cart-item-btn').click();
-
-    await expect(page.getByText('Your cart is empty')).toBeVisible();
+    await expect(page).toHaveURL("/cart");
+    await expect(cartPage.emptyMessage()).toBeVisible();
   });
 });

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from "../../pages/login/login.page";
 import { ProductsPage } from "../../pages/products/products.page";
+import { loginAsDemo } from '../../helpers/auth';
 
 const DEMO = { email: process.env.TEST_EMAIL!, password: process.env.TEST_PASSWORD! };
 
@@ -8,11 +9,7 @@ test.describe('Products Page', () => {
   let productsPage: ProductsPage;
 
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login(DEMO.email, DEMO.password);
-
-    await expect(page).toHaveURL("/products");
+    await loginAsDemo(page);
     productsPage = new ProductsPage(page);
   });
 
