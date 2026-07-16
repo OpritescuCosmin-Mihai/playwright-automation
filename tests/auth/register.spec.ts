@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { faker } from '@faker-js/faker';
 import { RegisterPage } from "../../pages/register/register.page";
-
-const DEMO = { email: process.env.TEST_EMAIL!, password: process.env.TEST_PASSWORD! };
+import { DEMO_USER } from "../../test-data/users";
 
 test.describe('Register Page', () => {
   let registerPage: RegisterPage;
@@ -55,7 +54,7 @@ test.describe('Register Page', () => {
   });
 
   test('C53 - register with an already registered email', async ({ page }) => {
-    await registerPage.register(faker.person.firstName(), process.env.TEST_EMAIL!, faker.internet.password());
+    await registerPage.register(faker.person.firstName(), DEMO_USER.email, faker.internet.password());
 
     await expect(registerPage.emailError()).toHaveText('Email is already registered');
   });

@@ -1,11 +1,10 @@
 import { expect, type Page } from "@playwright/test";
 import { LoginPage } from "../pages/login/login.page";
-
-const DEMO = { email: process.env.TEST_EMAIL!, password: process.env.TEST_PASSWORD! };
+import { DEMO_USER } from "../test-data/users";
 
 export async function loginAsDemo(page: Page): Promise<void> {
   const loginPage = new LoginPage(page);
   await loginPage.goto();
-  await loginPage.login(DEMO.email, DEMO.password);
+  await loginPage.login(DEMO_USER.email, DEMO_USER.password);
   await expect(page).toHaveURL("/products");  
 }
