@@ -21,4 +21,5 @@ export class Header {
   }
 
   cartCount(): Locator { return this.el.cartCount(); }
+  logoutButton(): Locator { return this.el.logoutButton(); }
 }
