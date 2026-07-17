@@ -32,4 +32,10 @@ test.describe('Products Page', () => {
     await productsPage.search("NonExistingProduct");
     await expect(productsPage.noResults()).toBeVisible();
   });
+
+  test('C54 - filter by rating 4+ stars', async ( ) => {
+    await productsPage.filterByRating(4);
+    await expect(productsPage.resultsCount()).toHaveText("125 products");
+    await expect(productsPage.pageInfo()).toHaveText("Page 1 of 11");
+  });
 });
