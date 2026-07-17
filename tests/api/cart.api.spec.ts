@@ -13,20 +13,22 @@ test.describe("API - Cart", () => {
 
     // Act: the same context automatically sends the session cookie
     const res = await request.post("/api/cart", { data: { productId: PRODUCT_ID } });
+    expect(res.status()).toBe(200);
+
     const cart = await res.json();
     const ids = cart.items.map((item: any) => item.product.id);
 
     // Assert
-    expect(res.status()).toBe(200);
     expect(ids).toContain(PRODUCT_ID);
   });
 
   test("add to cart - error: without auth returns 401", async ({ request }) => {
     // No login on this fresh context -> no session cookie
     const res = await request.post("/api/cart", { data: { productId: PRODUCT_ID } });
+    expect(res.status()).toBe(401);    
+
     const responseBody = await res.json();
 
-    expect(res.status()).toBe(401);    
     expect(responseBody.error).toBe("unauthorized");
   });
 
@@ -36,9 +38,10 @@ test.describe("API - Cart", () => {
     });
 
     const res = await request.post("/api/cart", { data: { productId: "does-not-exist" } });
+    expect(res.status()).toBe(404);
+
     const responseBody = await res.json();
 
-    expect(res.status()).toBe(404);
     expect(responseBody.error).toBe("product_not_found");
   });
 

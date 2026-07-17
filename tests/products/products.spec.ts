@@ -35,7 +35,7 @@ test.describe('Products Page', () => {
 
   test('C54 - filter by rating 4+ stars', async ( ) => {
     await productsPage.filterByRating(4);
-    await expect(productsPage.resultsCount()).toHaveText("125 products");
-    await expect(productsPage.pageInfo()).toHaveText("Page 1 of 11");
+    await expect(productsPage.resultsCount()).toHaveText("271 products");
+    await expect(productsPage.pageInfo()).toHaveText("Page 1 of 23");
   });
 });

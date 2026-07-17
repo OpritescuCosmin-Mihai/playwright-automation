@@ -2,6 +2,7 @@ import { test as base, expect, type Page } from '@playwright/test';
 import { loginAsDemo } from '../helpers/auth';
 import { CartPage } from '../pages/cart/cart.page';
 import { DEMO_USER } from "../test-data/users";
+import { apiLoginCookie } from '../helpers/auth';
 
 type AppFixtures = {
   authedPage: Page;
@@ -10,43 +11,30 @@ type AppFixtures = {
 };
 
 export const test = base.extend<AppFixtures>({
-  authedPage: async ({ page }, use) => {
-    await loginAsDemo(page);
+  authedPage: async ({ page, request }, use) => {
+    const session = await apiLoginCookie(request);
+    await page.context().addCookies([session]);
+    await page.goto("/products");
     await use(page);
   },
 
   emptyCartPage: async ({ authedPage }, use) => {
-    const cart = new CartPage(authedPage);
-    await cart.goto();
-    await cart.clear();
+    const cartPage = new CartPage(authedPage);
+    await cartPage.goto();
+    await cartPage.clear();
     await authedPage.goto("/products");
     await use(authedPage);
   },
 
+  // Standalone: fresh browser context with the injected session (used by the API-login E2E test).
   apiAuthedPage: async ({ browser, request }, use) => {
-    // log in via the API - no UI interaction needed
-    const res = await request.post("/api/auth/login", {
-      data: { email: DEMO_USER.email, password: DEMO_USER.password },
-    });
-    if (!res.ok()) {
-      throw new Error(`API login failed: ${res.status()} ${await res.text()}`);
-    }
-
-    // Grab the HttpOnly "session" cookie the login set
-    const { cookies } = await request.storageState();
-    const session = cookies.find((c: any) => c.name === "session");
-    if (!session) {
-      throw new Error("Login succeeded but no session cookie was returned");
-    }
-
-    // isolated context per test; inject the cookie (HttpOnly -> addCookie)
+    const session = await apiLoginCookie(request);
     const context = await browser.newContext();
     await context.addCookies([session]);
     const page = await context.newPage();
-
     await use(page);
-
-    await context.close(); // cleanup after the test
+    await page.close();
+    await context.close();
   },
 });
 

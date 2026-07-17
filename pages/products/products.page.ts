@@ -33,10 +33,15 @@ export class ProductsPage {
   }
 
   async addFirstToCart(): Promise<void> {
-    await test.step("Add the first product to the cart", async () => {
-      await this.el.addToCartFirst().click();
-    });
-  }
+  await test.step("Add the first product to the cart", async () => {
+    await Promise.all([
+      this.page.waitForResponse(
+        (r) => r.url().includes("/api/cart") && r.request().method() === "POST",
+      ),
+      this.el.addToCartFirst().click(),
+    ]);
+  });
+}
 
   // assertion-facing locators
   list(): Locator { return this.el.list(); }
